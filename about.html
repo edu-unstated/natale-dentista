@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Archivio</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+     <div class="about-title">
+      <div class="line1">About the Archive</div>
+      <div class="title-links">
+        <a href="#whitaker" class="title-btn about-link">Dr. Aaron Whitaker</a>
+        <a href="#discovery" class="title-btn about-link">Discovery of the Laboratory</a>
+        <a href="#historical" class="title-btn about-link">Historical Context</a>
+      </div>
+     </div>
+
+    <a href="index.html" class="back-to-gallery">Back to gallery</a>
+    
+    <main class="about-canvas">
+      <div class="about-grid">
+  <h1 id="whitaker" class="about-title-custom">Dr. Aaron Whitaker</h1>
+    <p class="about-text">“The archive documents the work of Dr. Aaron Whitaker, a dentist and self-directed researcher active in Chicago between 1948 and 1965. Operating from a small private clinic, Whitaker pursued independent experimental practices alongside his professional activity, focusing on early forms of osseointegration.<br>
+  The materials suggest a process driven by repetition and adjustment, in which non-conventional procedures were tested directly on patients.<br>
+  His work appears to have developed outside established medical frameworks, with no evidence of formal validation or institutional oversight.”</p>
+        <img class="about-image" src="img/about/about1.jpeg" alt="About image 1" />
+  <h2 id="discovery" class="about-title-custom">Discovery of the Laboratory</h2>
+  <p class="about-text">The archive was discovered during renovation works in the building where Whitaker once practiced.<br>
+  A concealed basement space—absent from the original floor plans—revealed a secondary laboratory used for experimental activity.
+<br>
+The recovered materials include dental radiographs, photographs of the workspace, medical instruments, biological samples, modified prosthetics, and handwritten clinical notes.<br>
+  Originally lacking any systematic organization, the archive has been reconstructed chronologically based on internal evidence.<br>
+The documentation abruptly ends in 1965, with no official record of the clinic’s closure, suggesting a sudden interruption of Whitaker’s work.<br>
+The state of deterioration across all materials indicates long-term abandonment and improper preservation.</p>
+    <img class="about-image" src="img/about/about3.jpeg" alt="About image 3" />
+  <h2 id="historical" class="about-title-custom">Historical Context</h2>
+  <p class="about-text">The archive is situated within the broader context of postwar Chicago, a major industrial center characterized by a large working-class population and limited access to structured healthcare systems.<br>
+During this period, private medical practices operated with significant autonomy, often outside institutional environments and with minimal oversight.<br>
+At the same time, dental implantology was still in an early experimental phase, allowing for informal and non-standardized procedures.<br>
+Within this context, Whitaker’s practice reflects both the possibilities and the risks of a largely unregulated medical landscape, where experimental research could develop without clearly defined boundaries.</p>
+    <img class="about-image" src="img/about/about2.jpeg" alt="About image 2" />
+  </div>
+    </main>
+
+  <!-- about page thumbnail rail (about-specific implementation) -->
+  <div class="about-thumb-rail" id="about-thumb-rail" aria-hidden="false"></div>
+
+  <script>
+    (function(){
+      var grid = document.querySelector('.about-grid');
+      if (!grid) return;
+
+      // Use the grid's own scrollTop because the grid is a fixed, internally-scrollable element.
+      var ticking = false;
+      function onGridScroll() {
+        if (!ticking) {
+          window.requestAnimationFrame(function() {
+            if (grid.scrollTop > 10) {
+              grid.classList.add('scrolled');
+            } else {
+              grid.classList.remove('scrolled');
+            }
+            ticking = false;
+          });
+          ticking = true;
+        }
+      }
+
+      // Listen to the grid's scroll event
+      grid.addEventListener('scroll', onGridScroll, { passive: true });
+
+      // Also detect mouse wheel / touch gestures that may occur before the scroll event
+      grid.addEventListener('wheel', function(e) {
+        // if user scrolls downward attempt to trigger the same check
+        if (e.deltaY > 0) onGridScroll();
+      }, { passive: true });
+
+      grid.addEventListener('touchmove', function() { onGridScroll(); }, { passive: true });
+
+      // Smoothly scroll the grid to a target section when title links are clicked
+      var links = document.querySelectorAll('.about-link');
+      links.forEach(function(link){
+        link.addEventListener('click', function(ev){
+          ev.preventDefault();
+          var href = link.getAttribute('href');
+          if (!href || href.charAt(0) !== '#') return;
+          var target = document.querySelector(href);
+          if (!target) return;
+
+          // compute target position relative to the grid's scrollTop
+          var gridRect = grid.getBoundingClientRect();
+          var targetRect = target.getBoundingClientRect();
+          var offset = targetRect.top - gridRect.top + grid.scrollTop;
+
+          grid.scrollTo({ top: offset - 8, behavior: 'smooth' });
+        });
+      });
+
+      // Populate about-specific thumbnail rail
+      var aboutRail = document.getElementById('about-thumb-rail');
+      if (aboutRail) {
+        var sections = [
+          { id: 'whitaker', img: 'img/about/about1.jpeg', label: 'Whitaker' },
+          { id: 'discovery', img: 'img/about/about3.jpeg', label: 'Discovery' },
+          { id: 'historical', img: 'img/about/about2.jpeg', label: 'Historical' }
+        ];
+
+        sections.forEach(function(s){
+          var img = document.createElement('img');
+          img.className = 'thumb';
+          img.src = s.img;
+          img.alt = s.label;
+          img.dataset.target = s.id;
+          img.addEventListener('click', function(){
+            var target = document.getElementById(this.dataset.target);
+            if (!target) return;
+            var gridRect = grid.getBoundingClientRect();
+            var targetRect = target.getBoundingClientRect();
+            var offset = targetRect.top - gridRect.top + grid.scrollTop;
+            grid.scrollTo({ top: offset - 8, behavior: 'smooth' });
+          });
+          aboutRail.appendChild(img);
+        });
+
+        // Observe scroll to set active thumb
+        function updateActiveThumb() {
+          var gridRect = grid.getBoundingClientRect();
+          var thumbs = aboutRail.querySelectorAll('.thumb');
+          sections.forEach(function(s, i){
+            var el = document.getElementById(s.id);
+            if (!el) return;
+            var elRect = el.getBoundingClientRect();
+            var visible = (elRect.top >= gridRect.top - 20 && elRect.top < gridRect.bottom);
+            if (visible) {
+              thumbs[i].classList.add('active');
+            } else {
+              thumbs[i].classList.remove('active');
+            }
+          });
+        }
+
+        grid.addEventListener('scroll', function(){ updateActiveThumb(); }, { passive: true });
+        // init
+        updateActiveThumb();
+      }
+    })();
+  </script>
+
+  </body>
+</html>

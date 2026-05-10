@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Archivio</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="archive-title">
+      <div class="line1">Dr. Whitaker’s</div>
+      <div class="line2">Aberrant Findings</div>
+
+      <div class="title-links">
+        <a href="./about.html" class="title-btn">About</a>
+        <a href="./webinteraction.html" class="title-btn">Book your appointment</a>
+      </div>
+
+    </div>
+    <main class="grid" id="grid"></main>
+
+    <aside class="left-panel" id="left-panel">
+      <div class="panel-inner">
+        <div class="categories-list" id="categories-list"></div>
+      </div>
+    </aside>
+
+    <!-- right-side thumbnail rail -->
+    <div class="thumb-rail" id="thumb-rail" aria-hidden="false"></div>
+
+    <div class="lightbox" id="lightbox" aria-hidden="true">
+      <div class="lb-backdrop" id="lb-backdrop"></div>
+      <button class="lb-close" id="lb-close">✕</button>
+      <button class="lb-prev" id="lb-prev">←</button>
+      <button class="lb-next" id="lb-next">→</button>
+      <div class="lb-content">
+        <img class="lb-img" id="lb-img" src="" alt="">
+        <div class="lb-info">
+          <span class="lb-id" id="lb-id"></span>
+          <div class="lb-tags" id="lb-tags"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Questi script sono necessari a far funzionare i modelli ml -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core@4.11.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter@4.11.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl@4.11.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/hand-pose-detection@2.0.0"></script>
+
+    <!-- 1. Crea un nuovo file nella tua cartella e chiamalo "tuocognome-lm.js" (vedi esempio altri progetti) -->
+    <!-- 2. Dentro quel file prepara un'interazione con la webcam (puoi prendere spunto dagli altri progetti o dai 4 esempi dentro la cartella "machine-learning") -->
+    <!-- 3. Modifica la riga qui sotto affinché non sia commentata, in modo che il tuo file "index.html" usi il tuo file "tuocognome-lm.js" -->
+    <!-- <script src="tuocognome-lm.js"></script> -->
+    <script src="script.js"></script>
+  </body>
+</html>

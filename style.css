@@ -1,0 +1,684 @@
+@font-face {
+  font-family: 'Serif';
+  src: url('font/ABCOtto-Regular-Trial.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'ABCOtto-MediumItalic';
+  src: url('font/ABCOtto-MediumItalic-Trial.woff2') format('woff2');
+  font-style: italic;
+  font-weight: 500;
+  font-display: swap;
+}
+
+.card-tag {
+  /* remove the boxed background so tags appear inline */
+  padding: 0;
+  background: transparent;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  color: var(--text);
+  cursor: pointer;
+  transition: color 0.12s, text-decoration 0.12s;
+}
+
+.card-tag:hover {
+  /* subtle underline on hover instead of filled box */
+  text-decoration: underline;
+  color: var(--text);
+}
+
+.card-tag.highlight {
+  font-weight: 600;
+  color: var(--text);
+}
+
+
+a {
+  color: #E4E4E4;
+  text-decoration: none;
+}
+a:hover {
+  opacity: 0.4;
+}
+
+a {
+  transition: opacity .3s cubic-bezier(.8,0,.2,1);
+}
+:root {
+  --bg: #1e1e1e;
+  --surface: #ffffff;
+  --text: #E4E4E4;
+  --muted: #E4E4E4;
+  --tag-bg: #ebebea;
+  --tag-active: #1a1a1a;
+  --tag-active-text: #E4E4E4;
+  --accent: #1a1a1a;
+  --radius: 0px;
+  /* layout spacers for fixed panels */
+  --left-panel-w: 300px;
+  --thumb-rail-w: 140px; /* wider to accommodate two columns */
+}
+
+body {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+*:not(.font-myTitle) {
+  font-family: 'Serif' ;
+  font-size: 12px;
+}
+
+.font-myTitle {
+  font-family: 'Serif';
+  font-size: 25px;
+  text-transform: uppercase;
+  line-height: 100%;
+  letter-spacing: 0.02em;
+}
+
+.archive-title {
+  position: fixed;
+  left: 18px;
+  top: 12px;
+  z-index: 220; /* above thumb rail and left panel */
+  color: var(--text);
+  font-family: 'Serif';
+  font-size: 36px !important;
+  line-height: 1.0;
+  margin: 0;
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start; /* ensure children align to the first letter */
+}
+.archive-title .line1 { font-weight: 600; font-size: 36px !important; }
+.archive-title .line2 { font-weight: 400; font-size: 36px !important; }
+.about-title .line1 { font-weight: 400; font-size: 36px !important; }
+
+.about-title {
+  /* keep the about title visible and interactive above the fixed canvas */
+  position: fixed;
+  left: 18px;
+  top: 12px;
+  z-index: 300;
+  width: 500px;
+  box-sizing: border-box;
+  pointer-events: auto;
+}
+
+/* About page centered canvas and typography */
+.about-canvas {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  /* make the about canvas fixed and non-scrollable */
+  position: fixed;
+  inset: 0; /* top:0; right:0; bottom:0; left:0 */
+  overflow: hidden;
+  z-index: 200; /* sit below the grid (which uses 220) */
+  padding-left: 50px;
+  padding-right: 50px;
+  box-sizing: border-box;
+  text-align: center;
+}
+.about-grid {
+  width: 60%; /* column width */
+  /* fix the grid to the viewport so its scroll starts at the top edge */
+  position: fixed;
+  top: 50px; /* start a bit lower on initial load */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 220;
+  height: calc(100vh - 50px); /* reduce height to account for top offset */
+  overflow-y: auto;
+  padding: 0 50px; /* internal padding matches requested 50px */
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 18px;
+  transition: top 220ms cubic-bezier(.2,.8,.2,1), height 220ms cubic-bezier(.2,.8,.2,1);
+}
+.about-grid.scrolled {
+  top: 0 !important;
+  height: 100vh !important;
+}
+.about-image {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 2px;
+  object-fit: cover;
+}
+.about-title-custom {
+  font-family: 'Serif';
+  font-size: 36px;
+  line-height: 1;
+  margin-bottom: 18px;
+  font-weight: 600;
+  text-align: center;
+}
+  .about-text {
+  font-family: 'ABCOtto-MediumItalic', 'Serif';
+  font-size: 18px;
+  line-height: 1.6;
+  margin: 0;
+  padding: 0 50px; /* 50px padding on left and right as requested */
+  box-sizing: border-box;
+  max-width: none;
+  text-align: center;
+  white-space: normal;
+}
+
+/* links under the title (About / Book appointment) */
+.title-links {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start; /* align left edges */
+  gap: 10px;
+}
+.title-btn {
+  display: inline-block;
+  padding: 0; /* remove left padding so it lines up with title */
+  background: transparent;
+  color: var(--text);
+  text-decoration: none;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+}
+.title-btn:hover { opacity: 0.6; }
+
+/* use ABCOtto-MediumItalic for the small title links */
+.title-links .title-btn {
+  font-family: 'ABCOtto-MediumItalic', 'Serif';
+  font-style: italic;
+  font-size: 14px;
+}
+
+
+.search-wrap {
+  flex: 1;
+  max-width: 320px;
+  position: relative;
+}
+
+.search-wrap input {
+  width: 100%;
+  /* padding: 8px 12px 8px 12px; */
+  background: var(--surface);
+  font-size: 13px;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s;
+  border: none;
+}
+
+
+.btn-random {
+  padding: 5px 7px;
+  background: var(--surface);
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.btn-random:hover {
+  background: var(--accent);
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+/* Macro categories bar (above tags) */
+.macro-bar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.macro-btn {
+  padding: 6px 12px;
+  background: #f5f5f5;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.12s, color 0.12s, transform 0.08s;
+}
+
+.macro-btn:hover { transform: translateY(-1px); }
+
+.macro-btn.active {
+  background: var(--tag-active);
+  color: var(--tag-active-text);
+}
+
+/* dim tags that are not part of the selected macro */
+.tag-btn.dimmed {
+  opacity: 0.4;
+  filter: none;
+}
+
+.tag-btn {
+  padding: 4px 10px;
+  background: var(--tag-bg);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+
+.tag-btn:hover {
+  border-color: var(--accent);
+}
+
+.tag-btn.active {
+  background: var(--tag-active);
+  color: var(--tag-active-text);
+  border-color: var(--tag-active);
+  opacity: 1 !important;
+}
+
+button {
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+/* ── RESULTS COUNT ── */
+.results-info {
+  max-width: 1200px;
+  padding: 14px 24px 0;
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* ── GRID ── */
+.grid {
+  /* Masonry-like columns */
+  /* leave space for fixed left panel and right thumb rail */
+  /* move columns a bit to the right and tighten vertical padding so scroll reaches margins */
+  /* reserve vertical space for the fixed title (36px) + small gap */
+  padding: calc(12px + 56px) 24px 12px;
+  padding-left: calc(var(--left-panel-w) + 48px);
+  padding-right: calc(var(--thumb-rail-w) + 24px);
+  column-count: 2;
+  column-gap: 18px;
+}
+
+/* ── CARD ── */
+.card {
+  background: transparent;
+  display: inline-block; /* work with CSS columns */
+  width: 100%;
+  margin: 0 0 18px;
+  break-inside: avoid;
+  -webkit-column-break-inside: avoid;
+  -moz-column-break-inside: avoid;
+  box-shadow: none;
+  border-radius: 2px;
+  overflow: visible;
+  transition: opacity 0.2s ease;
+
+  padding-top: 30px;
+}
+
+
+.card-img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  display: block;
+  background: #ddd;
+}
+
+/* initial state: images slide in from top as you scroll */
+.card-img {
+  transform: translateY(-30px);
+  opacity: 0;
+  transition: transform 620ms cubic-bezier(.2,.8,.2,1), opacity 420ms ease;
+}
+.card-img.in-view {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+/* subtle hover zoom */
+.card:hover .card-img { transform: scale(1.02); }
+
+.card-body {
+  padding: 14px 0px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+}
+
+.card-id {
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+}
+
+.card-desc {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text);
+  flex: 1;
+}
+
+.card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.card-tag {
+  background: transparent;
+  padding: 0;
+  margin-right: 8px;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  color: var(--text);
+  cursor: pointer;
+  transition: color 0.12s;
+}
+
+.card-tag:hover {
+  text-decoration: none;
+  color: var(--text);
+}
+
+.card-tag.highlight {
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* ── EMPTY STATE ── */
+.empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--muted);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 600px) {
+  .archive-title { left: 12px; top: 8px; font-size: 20px !important; }
+  .grid { padding: calc(16px + 48px) 16px 40px; column-count: 1; }
+  .results-info { padding: 12px 16px 0; }
+  h1 { font-size: 12px; }
+  /* Make about page readable on small screens */
+  .about-canvas { padding-left: 20px; padding-right: 20px; position: static; overflow: auto; z-index: auto; }
+  .about-grid { width: 90%; padding: 0 20px; max-height: none; }
+  .about-grid { position: static; height: auto; }
+  .about-text { margin: 0; padding: 0 20px; max-width: none; font-size: 16px; box-sizing: border-box; }
+}
+
+/* ── LIGHTBOX ── */
+.lightbox {
+  display: none;
+  position: fixed;
+  inset: 0; 
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+}
+
+/* right thumbnail rail */
+.thumb-rail {
+  position: fixed;
+  right: 10px;
+  top: 10px;
+  bottom: 10px;
+  width: calc(var(--thumb-rail-w) - 18px);
+  z-index: 160;
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 8px 6px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* About page specific thumbnail rail — similar behavior but scoped to about page */
+.about-thumb-rail {
+  position: fixed;
+  right: 10px;
+  top: 10px;
+  bottom: 10px;
+  width: calc(var(--thumb-rail-w) - 18px);
+  z-index: 240; /* slightly above grid but below title */
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 8px 6px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.about-thumb-rail .thumb {
+  width: 100%;
+  height: 48px;
+  object-fit: cover;
+  display: block;
+  opacity: 0.35;
+  border-radius: 2px;
+  cursor: pointer;
+  border: 2px solid rgba(0,0,0,0.25);
+}
+.about-thumb-rail .thumb.active {
+  opacity: 1;
+}
+
+.thumb-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.thumb-rail .thumb {
+  width: 100%;
+  height: 48px;
+  object-fit: cover;
+  display: block;
+  opacity: 0.3;
+  border-radius: 2px;
+  cursor: pointer;
+  border: 2px solid rgba(0,0,0,0.25);
+}
+.thumb-rail .thumb.active {
+  opacity: 1;
+  /* border-color: #bfbfbf; */
+}
+
+/* Left floating panel (bottom-left) for categories */
+.left-panel {
+  position: fixed;
+  left: 18px;
+  bottom: 18px;
+  width: calc(var(--left-panel-w) - 40px);
+  max-height: calc(100vh - 36px);
+ 
+  color: var(--text);
+  z-index: 150;
+  padding: 18px;
+  overflow: auto;
+
+}
+.left-panel .macro-bar,
+.left-panel .tags-bar {
+  display: block;
+  margin-bottom: 12px;
+}
+
+.left-panel .tag-btn,
+.left-panel .macro-btn {
+  display: inline-block;
+  margin: 6px 8px 6px 0;
+  color: rgba(228,228,228,0.9);
+  background: transparent;
+}
+
+.left-panel .tag-btn.active,
+.left-panel .macro-btn.active {
+  color: var(--text);
+}
+
+/* categories-list specific */
+.categories-list .cat-section {
+  margin-bottom: 18px;
+}
+.categories-list .cat-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+
+/* underline the macro title when selected */
+.categories-list .cat-title.macro-active {
+  text-decoration: underline;
+  text-decoration-color: var(--text);
+  text-underline-offset: 4px;
+}
+.categories-list .cat-list {
+  display: block;
+  color: rgba(228,228,228,0.9);
+}
+.categories-list .cat-list .tag-btn {
+  margin: 4px 10px 6px 0;
+  padding: 0;
+  background: transparent;
+  color: rgba(228,228,228,0.85);
+  font-size: 13px;
+}
+.categories-list .cat-list .tag-btn.dimmed {
+  opacity: 0.5;
+}
+
+.lightbox.open {
+  display: flex;
+}
+
+.lb-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.88);
+  cursor: zoom-out;
+}
+
+.lb-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: min(90vw, 960px);
+  max-height: 90vh;
+  gap: 14px;
+}
+
+.lb-img {
+  display: block;
+  max-width: 100%;
+  max-height: calc(90vh - 60px);
+  object-fit: contain;
+}
+
+.lb-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.lb-id {
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+  flex-shrink: 0;
+}
+
+.lb-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+}
+
+.lb-tags .card-tag {
+  color: var(--text);
+  background: rgba(228,228,228,0.08);
+}
+
+.lb-tags .card-tag:hover,
+.lb-tags .card-tag.highlight {
+  background: #fff;
+  color: var(--text);
+}
+
+.lb-close,
+.lb-prev,
+.lb-next {
+  position: fixed;
+  z-index: 2;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 12px;
+  line-height: 1;
+  transition: color 0.12s;
+}
+
+.lb-close:hover,
+.lb-prev:hover,
+.lb-next:hover {
+  color: var(--text);
+}
+
+.lb-close { top: 16px; right: 20px; font-size: 16px; }
+.lb-prev  { left: 16px;  top: 50%; transform: translateY(-50%); font-size: 28px; }
+.lb-next  { right: 16px; top: 50%; transform: translateY(-50%); font-size: 28px; }
+
+.lb-prev:disabled,
+.lb-next:disabled {
+  opacity: 0.2;
+  cursor: default;
+}
+
+/* back to gallery link for About page */
+.back-to-gallery {
+  position: fixed;
+  left: 18px;
+  bottom: 18px;
+  z-index: 260;
+  color: var(--text);
+  text-decoration: none;
+  font-size: 13px;
+  background: transparent;
+  padding: 8px 10px;
+}
+.back-to-gallery:hover { opacity: 0.8; }
