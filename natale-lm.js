@@ -234,3 +234,5 @@ const video = document.getElementById("webcam");
 
  // Load model when page loads
  loadModel();
+ 
+ 
