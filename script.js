@@ -93,7 +93,8 @@ function buildCategoriesList() {
       btn.className = 'tag-btn';
       btn.textContent = tag;
       btn.dataset.tag = tag;
-      btn.addEventListener('click', () => toggleCatTag(tag));
+      // allow selecting subcategory tags directly (toggle filter) without requiring macro selection
+      btn.addEventListener('click', () => toggleTag(tag));
       list.appendChild(btn);
     });
     section.appendChild(list);
@@ -221,10 +222,14 @@ function toggleTag(tag) {
   } else {
     activeTags.add(tag);
   }
-  // sync button states
-  tagsBar.querySelectorAll('.tag-btn').forEach(btn => {
-    btn.classList.toggle('active', activeTags.has(btn.dataset.tag));
-  });
+  // sync top tags bar (if present)
+  if (tagsBar) {
+    tagsBar.querySelectorAll('.tag-btn').forEach(btn => {
+      btn.classList.toggle('active', activeTags.has(btn.dataset.tag));
+    });
+  }
+  // sync left-panel tag/button states
+  updateTagButtonStates();
   render();
 }
 
@@ -457,4 +462,3 @@ document.addEventListener('keydown', e => {
 
 // ── Init ──────────────────────────────────────────────────────────────────
 loadData();
-

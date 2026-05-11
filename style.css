@@ -83,8 +83,8 @@ body {
 
 .archive-title {
   position: fixed;
-  left: 18px;
-  top: 12px;
+  left: 10px;
+  top: 10px;
   z-index: 220; /* above thumb rail and left panel */
   color: var(--text);
   font-family: 'Serif';
@@ -103,8 +103,8 @@ body {
 .about-title {
   /* keep the about title visible and interactive above the fixed canvas */
   position: fixed;
-  left: 18px;
-  top: 12px;
+  left: 10px;
+  top: 5px;
   z-index: 300;
   width: 500px;
   box-sizing: border-box;
@@ -122,8 +122,8 @@ body {
   inset: 0; /* top:0; right:0; bottom:0; left:0 */
   overflow: hidden;
   z-index: 200; /* sit below the grid (which uses 220) */
-  padding-left: 50px;
-  padding-right: 50px;
+  padding-left: none;
+  padding-right: none;
   box-sizing: border-box;
   text-align: center;
 }
@@ -166,8 +166,8 @@ body {
   text-align: center;
 }
   .about-text {
-  font-family: 'ABCOtto-MediumItalic', 'Serif';
-  font-size: 18px;
+  font-family: 'font/ABCOtto-Regular-Trial.woff2', 'Serif';
+  font-size: 14px;
   line-height: 1.6;
   margin: 0;
   padding: 0 50px; /* 50px padding on left and right as requested */
@@ -179,11 +179,11 @@ body {
 
 /* links under the title (About / Book appointment) */
 .title-links {
-  margin-top: 6px;
+  margin-top: 5px;
   display: flex;
   flex-direction: column;
   align-items: flex-start; /* align left edges */
-  gap: 10px;
+  gap: 5px;
 }
 .title-btn {
   display: inline-block;
@@ -363,7 +363,7 @@ button {
   padding: 14px 0px 16px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 2px;
   flex: 1;
 }
 
@@ -371,10 +371,11 @@ button {
   font-size: 10px;
   color: var(--muted);
   letter-spacing: 0.06em;
+  gap: none;
 }
 
 .card-desc {
-  font-size: 13px;
+  font-size: 12px;
   line-height: 1.55;
   color: var(--text);
   flex: 1;
@@ -461,13 +462,13 @@ button {
 .about-thumb-rail {
   position: fixed;
   right: 10px;
-  top: 10px;
-  bottom: 10px;
+  top: 75px;
+  bottom: 75px;
   width: calc(var(--thumb-rail-w) - 18px);
   z-index: 240; /* slightly above grid but below title */
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 250px;
   align-items: flex-start;
   padding: 8px 6px;
   overflow-y: auto;
@@ -475,7 +476,7 @@ button {
 }
 .about-thumb-rail .thumb {
   width: 100%;
-  height: 48px;
+  height: clamp(36px, 6vh, 48px);
   object-fit: cover;
   display: block;
   opacity: 0.35;
@@ -513,21 +514,21 @@ button {
 /* Left floating panel (bottom-left) for categories */
 .left-panel {
   position: fixed;
-  left: 18px;
-  bottom: 18px;
+  left: 10px;
+  bottom: 10px;
   width: calc(var(--left-panel-w) - 40px);
   max-height: calc(100vh - 36px);
  
   color: var(--text);
   z-index: 150;
-  padding: 18px;
+  padding: none;
   overflow: auto;
 
 }
 .left-panel .macro-bar,
 .left-panel .tags-bar {
   display: block;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .left-panel .tag-btn,
@@ -544,14 +545,20 @@ button {
 }
 
 /* categories-list specific */
+.categories-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px; /* reduced to make the list more compact */
+}
 .categories-list .cat-section {
-  margin-bottom: 18px;
+  margin: 0;
+  padding: 4px 0; /* even tighter vertical padding */
 }
 .categories-list .cat-title {
   font-size: 16px;
   font-weight: 700;
   color: var(--text);
-  margin-bottom: 8px;
+  margin-bottom: 6px; /* tighter spacing under title */
   cursor: pointer;
 }
 
@@ -566,7 +573,7 @@ button {
   color: rgba(228,228,228,0.9);
 }
 .categories-list .cat-list .tag-btn {
-  margin: 4px 10px 6px 0;
+  margin: 3px 6px 4px 0; /* tightened more */
   padding: 0;
   background: transparent;
   color: rgba(228,228,228,0.85);
@@ -672,13 +679,22 @@ button {
 /* back to gallery link for About page */
 .back-to-gallery {
   position: fixed;
-  left: 18px;
-  bottom: 18px;
+  left: 5px;
+  bottom: 5px;
   z-index: 260;
   color: var(--text);
   text-decoration: none;
-  font-size: 13px;
+  font-size: 14px;
   background: transparent;
-  padding: 8px 10px;
+  padding: 5px 5px;
 }
 .back-to-gallery:hover { opacity: 0.8; }
+
+/* HIDE SCROLLBAR */
+*::-webkit-scrollbar {
+  display: none;
+}
+* {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
