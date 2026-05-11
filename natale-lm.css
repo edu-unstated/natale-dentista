@@ -1,0 +1,28 @@
+video {
+  max-width: 100%;
+  display: block;
+}
+
+canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  max-width: 100%;
+  display: block;
+}
+
+button {
+  margin-top: 10px;
+}
+
+#info {
+  margin-top: 10px;
+  text-align: left;
+  background: white;
+}
+
+.face-info {
+}
+
+.feature-info {
+}
