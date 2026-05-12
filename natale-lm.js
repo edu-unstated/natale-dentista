@@ -1,3 +1,11 @@
+const dentaturaFrontale = new Image();
+// use the required x-ray overlay image from the project's asset folder
+dentaturaFrontale.src = "asset/dentatura-frontale.jpeg";
+
+const otturazione = new Image();
+// use the restoration image bundled with the project
+otturazione.src = "asset/otturazione.jpeg";
+ 
 const video = document.getElementById("webcam");
  const canvas = document.getElementById("canvas");
  const ctx = canvas.getContext("2d");
@@ -9,15 +17,17 @@ const video = document.getElementById("webcam");
  let detector = null;
  let isDetecting = false;
  let showNumbers = true;  // Toggle for showing numbers
+let handModel = null;
+let hands = [];
 
- // Colors for different faces
+ // Colors for different faces (made neutral to avoid red visual tracking)
  const faceColors = [
-     "#FF0000",  // Red
-     "#00FF00",  // Green
-     "#0088FF",  // Blue
-     "#FF00FF",  // Magenta
-     "#FFFF00",  // Yellow
-     "#00FFFF"   // Cyan
+     "rgba(228,228,228,0.9)",
+     "rgba(200,200,200,0.85)",
+     "rgba(180,180,180,0.8)",
+     "rgba(160,160,160,0.75)",
+     "rgba(140,140,140,0.7)",
+     "rgba(120,120,120,0.65)"
  ];
 
  // Facial feature regions (indices for specific landmarks)
@@ -51,6 +61,14 @@ const video = document.getElementById("webcam");
          status.textContent = "Model loaded! Click 'Start Camera'";
          startBtn.disabled = false;
          console.log("Face detection model loaded successfully!");
+        // try to load hand model (optional)
+        try {
+            handModel = await handpose.load();
+            console.log('Handpose model loaded');
+        } catch (e) {
+            console.warn('Handpose model not available:', e && e.message);
+            handModel = null;
+        }
      } catch (error) {
          status.textContent = "Error loading model: " + error.message;
          console.error(error);
@@ -62,8 +80,8 @@ const video = document.getElementById("webcam");
      try {
          const stream = await navigator.mediaDevices.getUserMedia({
              video: { 
-                 width: { ideal: 480 },
-                 height: { ideal: 360 },
+                 width: { ideal: 960 },
+                 height: { ideal: 720 },
                  facingMode: "user"
              },
          });
@@ -92,43 +110,6 @@ const video = document.getElementById("webcam");
          status.textContent = "Error accessing camera: " + error.message;
          console.error(error);
      }
- }
-
- // Draw facial landmarks
- function drawFaceLandmarks(keypoints, color) {
-     // Draw all keypoints with numbers
-     keypoints.forEach((point, index) => {
-         // Draw the point
-         ctx.beginPath();
-         ctx.arc(point.x, point.y, 1, 0, 2 * Math.PI);
-         ctx.fillStyle = color;
-         ctx.fill();
-         
-         // Draw the number next to the point (if enabled)
-         if (showNumbers) {
-             ctx.fillStyle = color;
-             ctx.font = '8px Arial';
-             ctx.fillText(index, point.x + 3, point.y - 3);
-         }
-     });
-
-     // Draw face mesh connections
-     ctx.strokeStyle = color;
-     ctx.lineWidth = 1;
-
-     // Draw eyes
-     drawRegion(keypoints, FACE_REGIONS.leftEye, color);
-     drawRegion(keypoints, FACE_REGIONS.rightEye, color);
-
-     // Draw lips
-     drawRegion(keypoints, FACE_REGIONS.lips, color);
-
-     // Draw eyebrows
-     drawRegion(keypoints, FACE_REGIONS.leftEyebrow, color);
-     drawRegion(keypoints, FACE_REGIONS.rightEyebrow, color);
-
-     // Draw nose
-     drawRegion(keypoints, FACE_REGIONS.nose, color);
  }
 
  // Draw a specific facial region
@@ -177,6 +158,17 @@ const video = document.getElementById("webcam");
          flipHorizontal: false
      });
 
+    // optionally detect hands (lightweight) if model present
+    if (handModel) {
+        try {
+            hands = await handModel.estimateHands(video, true);
+        } catch (e) {
+            hands = [];
+        }
+    } else {
+        hands = [];
+    }
+
      // Clear canvas
      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -189,11 +181,29 @@ const video = document.getElementById("webcam");
          faces.forEach((face, index) => {
              const color = faceColors[index % faceColors.length];
              
-             // Draw bounding box
-             drawBoundingBox(face.keypoints, color);
-             
-             // Draw facial landmarks
-             drawFaceLandmarks(face.keypoints, color);
+            // Tracking visuals hidden (bounding box and landmarks removed)
+
+            // MOUTH DETECTION: check if mouth is open, draw xray overlay if so
+            const mouthOpen = isMouthOpen(face.keypoints);
+            if (mouthOpen) {
+                // draw the xray overlay aligned to mouth
+                const mouthOverlay = drawXrayMouth(face.keypoints);
+
+                // if there are hands detected, handle finger -> tooth interaction
+                if (hands && hands.length > 0) {
+                    // map first hand's index finger tip
+                    const hand = hands[0];
+                    const indexTip = hand.annotations && hand.annotations.indexFinger ? hand.annotations.indexFinger[3] : null;
+                    // handpose returns 3D points in pixels [x,y,z]
+                    if (indexTip) {
+                        const fingerPoint = { x: indexTip[0], y: indexTip[1] };
+                        if (isFingerInsideMouth(fingerPoint, face.keypoints)) {
+                            const mapped = mapFingerToOverlay(fingerPoint, face.keypoints, mouthOverlay);
+                            drawFillingOnPoint(mapped, face.keypoints);
+                        }
+                    }
+                }
+            }
 
              // Add info for this face
              const confidence = face.box ? 
@@ -234,5 +244,143 @@ const video = document.getElementById("webcam");
 
  // Load model when page loads
  loadModel();
+
+ function drawXrayMouth(face) {
+    const left = face[61];
+    const right = face[291];
+    const top = face[0];
+    const bottom = face[17];
+
+    // keypoints are in pixel coordinates; compute mouth box in pixels
+    const mouthX = left.x;
+    const mouthY = top.y;
+
+    const mouthW = (right.x - left.x) * 2.4;
+    const mouthH = (bottom.y - top.y) * 1.45;
+
+    const drawX = mouthX - mouthW * 0.3;
+    const drawY = mouthY - mouthH * 0.08;
+
+  ctx.save();
+  ctx.globalCompositeOperation = "screen";
+  ctx.globalAlpha = 0.58;
+
+  ctx.drawImage(
+    dentaturaFrontale,
+    drawX,
+    drawY,
+    mouthW,
+    mouthH
+  );
+
+  ctx.restore();
+
+    return { x: drawX, y: drawY, w: mouthW, h: mouthH };
+}
+
+// ---------------------- Helper functions for interactions ------------------
+
+function isMouthOpen(keypoints) {
+    // use landmarks 13 (top lip) and 14 (bottom lip) vertical distance
+    const top = keypoints[13];
+    const bottom = keypoints[14];
+    if (!top || !bottom) return false;
+    const dy = Math.abs(bottom.y - top.y);
+    // threshold relative to face height (use vertical span of keypoints)
+    const ys = keypoints.map(p => p.y);
+    const faceH = Math.max(...ys) - Math.min(...ys) || 1;
+    const rel = dy / faceH;
+    // tuned threshold: mouth open when vertical gap > ~0.035 of face height
+    return rel > 0.035;
+}
+
+function isFingerInsideMouth(fingerPoint, keypoints) {
+    // fingerPoint in pixel coords {x,y}
+    const left = keypoints[61];
+    const right = keypoints[291];
+    const top = keypoints[13];
+    const bottom = keypoints[14];
+    if (!left || !right || !top || !bottom) return false;
+    const minX = left.x;
+    const maxX = right.x;
+    const minY = top.y;
+    const maxY = bottom.y;
+    return fingerPoint.x >= minX && fingerPoint.x <= maxX && fingerPoint.y >= minY && fingerPoint.y <= maxY;
+}
+
+function mapFingerToOverlay(fingerPoint, keypoints, overlayBox) {
+    // overlayBox returned by drawXrayMouth: { x, y, w, h }
+    const left = keypoints[61];
+    const right = keypoints[291];
+    const top = keypoints[13];
+    const bottom = keypoints[14];
+    const minX = left.x;
+    const maxX = right.x;
+    const minY = top.y;
+    const maxY = bottom.y;
+    const relativeX = (fingerPoint.x - minX) / (maxX - minX);
+    const relativeY = (fingerPoint.y - minY) / (maxY - minY);
+    const overlayX = overlayBox.x + relativeX * overlayBox.w;
+    const overlayY = overlayBox.y + relativeY * overlayBox.h;
+    return { x: overlayX, y: overlayY, relX: relativeX, relY: relativeY };
+}
+
+
+// Draw all facial landmarks (points + optional numbers) and small circles
+function drawFaceLandmarks(keypoints, color) {
+    // keypoints are already in pixel coordinates (x,y). Draw points and optional indices
+    keypoints.forEach((point, index) => {
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, 1.5, 0, 2 * Math.PI);
+        ctx.fillStyle = color;
+        ctx.fill();
+
+        if (showNumbers) {
+            ctx.fillStyle = color;
+            ctx.font = '8px Arial';
+            ctx.fillText(String(index), point.x + 3, point.y - 3);
+        }
+    });
+
+    // draw regions for clarity
+    drawRegion(keypoints, FACE_REGIONS.leftEye, color);
+    drawRegion(keypoints, FACE_REGIONS.rightEye, color);
+    drawRegion(keypoints, FACE_REGIONS.lips, color);
+    drawRegion(keypoints, FACE_REGIONS.leftEyebrow, color);
+    drawRegion(keypoints, FACE_REGIONS.rightEyebrow, color);
+    drawRegion(keypoints, FACE_REGIONS.nose, color);
+}
+
+function drawFillingOnPoint(mappedPoint, face) {
+    // mappedPoint: { x, y, relX, relY } in overlay pixel coords
+    if (!mappedPoint) return;
+
+    const mouthBox = drawXrayMouth(face);
+    const size = mouthBox.w * 0.12;
+
+    // visual style: jitter + slight alpha flicker
+    const jitterX = (Math.random() - 0.5) * 4; // ±2px
+    const jitterY = (Math.random() - 0.5) * 4;
+    const flicker = 0.55 + Math.sin(Date.now() / 120) * 0.05; // oscillate around 0.55
+
+    const drawX = mappedPoint.x + jitterX - size / 2;
+    const drawY = mappedPoint.y + jitterY - size / 2;
+
+    ctx.save();
+    ctx.globalCompositeOperation = "screen";
+    ctx.globalAlpha = Math.max(0.5, Math.min(0.65, flicker));
+
+    // draw slightly degraded (lower quality) by drawing at slight scale and with alpha
+    ctx.drawImage(otturazione, drawX, drawY, size, size);
+
+    // optional additional noise: small translucent overlay
+    ctx.fillStyle = 'rgba(255,255,255,0.02)';
+    ctx.fillRect(drawX - 1, drawY - 1, size + 2, size + 2);
+
+    ctx.restore();
+
+    status.textContent = "Restoration detected.";
+}
+ 
  
  
