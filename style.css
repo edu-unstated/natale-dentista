@@ -127,6 +127,38 @@ body {
   box-sizing: border-box;
   text-align: center;
 }
+.webinteraction-left {
+  position: fixed;
+  left: 18px; /* align with page title */
+  /* place under the fixed title (title top:12px + 36px height + small gap) */
+  top: calc(12px + 36px + 10px);
+  z-index: 300;
+  width: 260px;
+  color: var(--text);
+  text-align: left;
+  box-sizing: border-box;
+  pointer-events: auto;
+}
+
+#status {
+  margin: 0 0 10px 0;
+  font-size: 14px;
+  color: var(--text);
+}
+
+#info {
+  background: transparent;
+  color: var(--text);
+  font-size: 13px;
+}
+
+@media (max-width: 800px) {
+  .webinteraction-left {
+    position: static;
+    width: auto;
+    padding: 0 16px;
+  }
+}
 .about-grid {
   width: 60%; /* column width */
   /* fix the grid to the viewport so its scroll starts at the top edge */
@@ -402,10 +434,14 @@ button {
 #container {
   position: relative;
   display: flex;
-  align-items: center;
+  /* place children at the top of the container and use padding to push the
+     video down. This keeps the canvas covering the full container while
+     allowing easy tuning of the webcam vertical offset. */
+  align-items: flex-start;
   justify-content: center;
-  /* allow the container to size to the video element (video is in normal flow)
-     which lets the JS-set canvas pixel size match the container */
+  --webcam-vertical-offset: 8vh; /* tweak this value to move the video up/down */
+  padding-top: var(--webcam-vertical-offset);
+  box-sizing: border-box;
 }
 
 #container video {

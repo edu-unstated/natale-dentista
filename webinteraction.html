@@ -9,22 +9,28 @@
 <script type="module" src="natale-lm.js"></script>
 
 <body>
+    <div class="about-title">
+      <div class="line1">Book your appointment</div>
+    </div>
+    <a href="index.html" class="back-to-gallery">Back to gallery</a>
     
     <div id="container">
         <video id="webcam" autoplay muted playsinline></video>
         <canvas id="canvas"></canvas>
     </div>
-    <div id="status">Loading model... Please wait</div>
+    <aside class="webinteraction-left">
+      <div id="status">Loading model... Please wait</div>
 
-    <div>
-      <button id="startBtn" disabled>Start Camera</button>
-      <button id="toggleNumbers">Hide Numbers</button>
+      <div>
+        <button id="startBtn" disabled>Start Camera</button>
+        <button id="toggleNumbers">Hide Numbers</button>
+      </div>
 
-    </div>
-    <div id="info">
-        <strong>Detected Faces:</strong>
-        <div id="faceList">Waiting for face detection...</div>
-    </div>
+      <div id="info">
+          <strong>Detected Faces:</strong>
+          <div id="faceList">Waiting for face detection...</div>
+      </div>
+    </aside>
 
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core@4.11.0"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter@4.11.0"></script>
