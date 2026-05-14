@@ -12,6 +12,7 @@ const video = document.getElementById("webcam");
  const status = document.getElementById("status");
  const startBtn = document.getElementById("startBtn");
  const faceList = document.getElementById("faceList");
+ const handList = document.getElementById("handList");
  const toggleNumbers = document.getElementById("toggleNumbers");
 
  let detector = null;
@@ -19,6 +20,86 @@ const video = document.getElementById("webcam");
  let showNumbers = true;  // Toggle for showing numbers
 let handModel = null;
 let hands = [];
+let handDetector = null;
+
+// Colors for different hands
+const handColors = [
+    "#FF0000",
+    "#00FF00",
+    "#0088FF",
+    "#FF00FF",
+    "#FFFF00",
+    "#00FFFF",
+];
+
+// Hand landmark connections
+const HAND_CONNECTIONS = [
+  [0,1],[1,2],[2,3],[3,4],
+  [0,5],[5,6],[6,7],[7,8],
+  [0,9],[9,10],[10,11],[11,12],
+  [0,13],[13,14],[14,15],[15,16],
+  [0,17],[17,18],[18,19],[19,20]
+];
+
+const LANDMARK_NAMES = [
+  "Wrist","Thumb CMC","Thumb MCP","Thumb IP","Thumb Tip",
+  "Index MCP","Index PIP","Index DIP","Index Tip",
+  "Middle MCP","Middle PIP","Middle DIP","Middle Tip",
+  "Ring MCP","Ring PIP","Ring DIP","Ring Tip",
+  "Pinky MCP","Pinky PIP","Pinky DIP","Pinky Tip"
+];
+
+function getDistance(p1, p2) {
+    return Math.hypot(p1.x - p2.x, p1.y - p2.y);
+}
+
+function drawHandBoundingBox(keypoints, color, label) {
+    const xs = keypoints.map(p => p.x);
+    const ys = keypoints.map(p => p.y);
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const minY = Math.min(...ys);
+    const maxY = Math.max(...ys);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(minX - 6, minY - 6, maxX - minX + 12, maxY - minY + 12);
+    if (label) {
+        ctx.fillStyle = color;
+        ctx.font = '12px Arial';
+        ctx.fillText(label, minX - 4, minY - 10);
+    }
+}
+
+function drawHandLandmarks(keypoints, color) {
+    // draw points
+    keypoints.forEach((p, i) => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        if (showNumbers) {
+            ctx.fillStyle = color;
+            ctx.font = '10px Arial';
+            ctx.fillText(String(i), p.x + 6, p.y - 6);
+        }
+    });
+
+    // draw connections
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3;
+    HAND_CONNECTIONS.forEach(([a, b]) => {
+        const p1 = keypoints[a];
+        const p2 = keypoints[b];
+        if (!p1 || !p2) return;
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.stroke();
+    });
+}
 
  // Colors for different faces (made neutral to avoid red visual tracking)
  const faceColors = [
@@ -68,6 +149,24 @@ let hands = [];
         } catch (e) {
             console.warn('Handpose model not available:', e && e.message);
             handModel = null;
+        }
+        // then try the newer tfjs hand-pose-detection MediaPipe Hands detector (preferred)
+        try {
+            if (window.handPoseDetection && handPoseDetection.createDetector) {
+                handDetector = await handPoseDetection.createDetector(
+                    handPoseDetection.SupportedModels.MediaPipeHands,
+                    {
+                        runtime: 'mediapipe',
+                        solutionPath: 'https://cdn.jsdelivr.net/npm/@mediapipe/hands',
+                        modelType: 'full',
+                        maxHands: 4
+                    }
+                );
+                console.log('MediaPipe Hands detector loaded');
+            }
+        } catch (e) {
+            console.warn('Hand detector not available:', e && e.message);
+            handDetector = null;
         }
      } catch (error) {
          status.textContent = "Error loading model: " + error.message;
@@ -158,15 +257,31 @@ let hands = [];
          flipHorizontal: false
      });
 
-    // optionally detect hands (lightweight) if model present
-    if (handModel) {
+    // detect hands: prefer the newer handDetector (MediaPipe Hands) if available
+    hands = [];
+    if (handDetector) {
         try {
-            hands = await handModel.estimateHands(video, true);
+            const raw = await handDetector.estimateHands(video, { flipHorizontal: false });
+            // normalize to { keypoints: [{x,y,z}], handedness, score }
+            hands = raw.map(h => {
+                const kps = (h.keypoints || h.landmarks || []).map(p => ({ x: p.x, y: p.y, z: p.z || 0 }));
+                return { keypoints: kps, handedness: (h.handedness && h.handedness[0] && h.handedness[0].label) || h.handedness || (h.handednessLabel || 'Unknown'), score: h.score || (h.handInViewConfidence || 1) };
+            });
+        } catch (e) {
+            console.warn('handDetector error', e && e.message);
+            hands = [];
+        }
+    } else if (handModel) {
+        try {
+            const raw = await handModel.estimateHands(video, true);
+            // handpose returns objects with landmarks: array of [x,y,z] and annotations
+            hands = raw.map(h => {
+                const kps = (h.landmarks || []).map(p => ({ x: p[0], y: p[1], z: p[2] || 0 }));
+                return { keypoints: kps, annotations: h.annotations || {}, handedness: h.handedness || 'Unknown', score: h.score || 1 };
+            });
         } catch (e) {
             hands = [];
         }
-    } else {
-        hands = [];
     }
 
      // Clear canvas
@@ -226,7 +341,52 @@ let hands = [];
          infoHTML = "<div>No faces detected - look at the camera!</div>";
      }
 
-     faceList.innerHTML = infoHTML;
+    faceList.innerHTML = infoHTML;
+
+    // Render hand info list
+    let handHTML = '';
+    if (hands && hands.length > 0) {
+        handHTML = `<div style="margin-bottom:10px"><strong>Tracking ${hands.length} hand(s)</strong></div>`;
+        hands.forEach((h, i) => {
+            const color = handColors[i % handColors.length];
+            const label = h.handedness || 'Hand';
+            handHTML += `<div class="hand-info" style="border-left:4px solid ${color}; padding:6px; margin-bottom:6px;">`;
+            handHTML += `<strong>${label}</strong> — ${h.keypoints ? h.keypoints.length : 0} pts`;
+            handHTML += `<div style="font-size:12px; margin-top:6px;">Detection: ${h.score ? (h.score*100).toFixed(1)+'%' : 'n/a'}</div>`;
+            if (showNumbers && h.keypoints) {
+                const keys = [0,4,8,12,16,20].map(idx => `${idx}:${LANDMARK_NAMES[idx] || idx}`).join(' &nbsp; ');
+                handHTML += `<div style="font-size:11px; margin-top:6px;">${keys}</div>`;
+            }
+            handHTML += `</div>`;
+        });
+    } else {
+        handHTML = '<div>No hands detected - show your hands to the camera!</div>';
+    }
+    if (handList) handList.innerHTML = handHTML;
+
+    // Draw hands on canvas (over the faces overlays)
+    if (hands && hands.length > 0) {
+        hands.forEach((h, i) => {
+            const color = handColors[i % handColors.length];
+            if (h.keypoints && h.keypoints.length > 0) {
+                drawHandBoundingBox(h.keypoints, color, h.handedness || 'Hand');
+                drawHandLandmarks(h.keypoints, color);
+
+                // if hand is near mouth of any detected face, we can map fingertip to overlay
+                // try index fingertip (8)
+                const tip = h.keypoints[8];
+                if (tip && faces && faces.length > 0) {
+                    faces.forEach(face => {
+                        if (isMouthOpen(face.keypoints) && isFingerInsideMouth(tip, face.keypoints)) {
+                            const mouthOverlay = drawXrayMouth(face.keypoints);
+                            const mapped = mapFingerToOverlay(tip, face.keypoints, mouthOverlay);
+                            drawFillingOnPoint(mapped, face.keypoints);
+                        }
+                    });
+                }
+            }
+        });
+    }
 
      // Continue detection loop
      if (isDetecting) {

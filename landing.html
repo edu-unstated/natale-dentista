@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Landing</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* Fullscreen landing image */
+    html,body {
+      height: 100%;
+      margin: 0;
+      background: #000;
+    }
+    .landing-wrap {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background: #000;
+    }
+    .landing-wrap img {
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+      display: block;
+    }
+    .skip-link {
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      z-index: 999;
+      color: #fff;
+      background: rgba(0,0,0,0.4);
+      padding: 8px 12px;
+      text-decoration: none;
+      border-radius: 4px;
+    }
+    .landing-cta {
+      position: absolute;
+      left: 50%; /* nudged slightly left */
+      top: 41%; /* moved slightly up */
+      transform: translate(-50%, -50%);
+      z-index: 998;
+      color: #fff;
+      text-decoration: none;
+  background: transparent; /* remove boxed background */
+  padding: 0 18px; /* symmetric horizontal spacing */
+      border-radius: 0;
+      font-family: 'Serif';
+      font-size: 36px;
+      line-height: 1;
+      /* show lowercase by default, then uppercase only the very first letter */
+      text-transform: lowercase;
+      letter-spacing: 0.02em;
+      box-shadow: none;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.6); /* subtle contrast over image */
+      display: inline-block;
+      text-align: center;
+      white-space: normal;
+    }
+    .landing-cta::first-letter {
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+  <div class="landing-wrap">
+    <img src="img/landing/landing1.jpeg" alt="Landing">
+  <a class="landing-cta" href="index.html?from=landing">Show your teeth to<br>start the visit</a>
+  </div>
+  <!-- skip-link removed: entry is now via central CTA only -->
+</body>
+</html>
+
+<!-- Face tracking: open mouth or smile triggers entry to site -->
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core@4.11.0"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter@4.11.0"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl@4.11.0"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection@1.0.2"></script>
+<script>
+  (function(){
+    const video = document.createElement('video');
+    video.autoplay = true;
+    video.muted = true;
+    video.playsInline = true;
+    video.style.display = 'none';
+    document.body.appendChild(video);
+
+    let detector = null;
+    let running = false;
+    let lastRun = 0;
+    const throttleMs = 120; // how often to run detection
+
+    // confirmation counters to avoid accidental triggers
+    let mouthOpenCount = 0;
+    let smileCount = 0;
+    const CONFIRM_FRAMES = 3;
+
+    function getFaceWidth(keypoints) {
+      const xs = keypoints.map(p => p.x);
+      return Math.max(...xs) - Math.min(...xs) || 1;
+    }
+
+    function isMouthOpen(kp) {
+      const top = kp[13];
+      const bottom = kp[14];
+      if (!top || !bottom) return false;
+      const dy = Math.abs(bottom.y - top.y);
+      const ys = kp.map(p => p.y);
+      const faceH = Math.max(...ys) - Math.min(...ys) || 1;
+      const rel = dy / faceH;
+      return rel > 0.035; // tuned threshold
+    }
+
+    function isSmiling(kp) {
+      const left = kp[61];
+      const right = kp[291];
+      if (!left || !right) return false;
+      const mouthW = Math.hypot(right.x - left.x, right.y - left.y);
+      const faceW = getFaceWidth(kp);
+      const rel = mouthW / faceW;
+      // smile when mouth width is relatively large (corners pulled sideways)
+      return rel > 0.48;
+    }
+
+    async function startCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+        video.srcObject = stream;
+        await video.play();
+        await tf.setBackend('webgl');
+        await tf.ready();
+        detector = await faceLandmarksDetection.createDetector(
+          faceLandmarksDetection.SupportedModels.MediaPipeFaceMesh,
+          { runtime: 'mediapipe', solutionPath: 'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh', refineLandmarks: true, maxFaces: 1 }
+        );
+        running = true;
+        requestAnimationFrame(loop);
+      } catch (e) {
+        console.warn('Camera or model init failed:', e && e.message);
+      }
+    }
+
+    async function loop(ts) {
+      if (!running) return;
+      if (ts - lastRun < throttleMs) {
+        requestAnimationFrame(loop);
+        return;
+      }
+      lastRun = ts;
+
+      try {
+        const faces = await detector.estimateFaces(video, { flipHorizontal: false });
+        if (faces && faces.length > 0) {
+          const f = faces[0];
+          const kp = f.keypoints;
+          if (isMouthOpen(kp)) {
+            mouthOpenCount++;
+          } else {
+            mouthOpenCount = 0;
+          }
+          if (isSmiling(kp)) {
+            smileCount++;
+          } else {
+            smileCount = 0;
+          }
+
+          if (mouthOpenCount >= CONFIRM_FRAMES || smileCount >= CONFIRM_FRAMES) {
+            // navigate to index with param so it doesn't redirect back to landing
+            running = false;
+            const target = 'index.html?from=landing';
+            // small delay to let user see action
+            setTimeout(() => { window.location.href = target; }, 200);
+            return;
+          }
+        } else {
+          // reset counters when no face
+          mouthOpenCount = 0;
+          smileCount = 0;
+        }
+      } catch (e) {
+        console.warn('detection error', e && e.message);
+      }
+
+      requestAnimationFrame(loop);
+    }
+
+    // Start when user interacts with the page OR try to start immediately
+    // to prompt camera permission. If autoplay is blocked, user can click CTA which will also grant permission.
+    startCamera();
+  })();
+</script>

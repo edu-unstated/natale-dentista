@@ -5,6 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Archivio</title>
     <link rel="stylesheet" href="style.css" />
+    <script>
+      // If the user arrived from the landing page (has ?from=landing), do not redirect.
+      // Remove the query param so a later refresh will show landing again.
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('from') === 'landing') {
+        // remove the param without navigating
+        params.delete('from');
+        const newSearch = params.toString();
+        const newUrl = window.location.pathname + (newSearch ? '?' + newSearch : '');
+        history.replaceState({}, '', newUrl);
+      } else {
+        const path = window.location.pathname || '/';
+        // Redirect when visiting site root or explicit index.html path
+        const isIndexPath = path === '/' || path === '' || path.endsWith('/index.html') || path === '/index.html' || path === 'index.html';
+        if (isIndexPath) {
+          window.location.replace('landing.html');
+        }
+      }
+    </script>
   </head>
   <body>
     <div class="archive-title">
