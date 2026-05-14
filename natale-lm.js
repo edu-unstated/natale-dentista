@@ -199,6 +199,21 @@ function drawHandLandmarks(keypoints, color) {
              video.height = videoHeight;
              
              console.log(`Video dimensions: ${videoWidth}x${videoHeight}`);
+            // Ensure the displayed video and overlay canvas are not visually mirrored.
+            try {
+                // Explicitly clear any CSS transform that may have been applied inline or by other scripts
+                video.style.transform = 'none';
+                video.style.webkitTransform = 'none';
+                canvas.style.transform = 'none';
+                canvas.style.webkitTransform = 'none';
+                // Log computed transforms for debugging if needed
+                console.debug('Computed video transform:', getComputedStyle(video).transform);
+                console.debug('Computed canvas transform:', getComputedStyle(canvas).transform);
+                // Reset canvas 2D transform matrix to identity
+                ctx.setTransform(1, 0, 0, 1, 0, 0);
+            } catch (e) {
+                console.warn('Could not reset transforms:', e && e.message);
+            }
              
              status.textContent = "Detecting faces...";
              startBtn.textContent = "Camera Running";
@@ -284,8 +299,14 @@ function drawHandLandmarks(keypoints, color) {
         }
     }
 
-     // Clear canvas
-     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Reset any canvas transform and clear canvas to avoid mirrored drawings
+    try {
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+    } catch (e) {
+        // ignore if context doesn't support setTransform for some reason
+    }
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
      // Draw each face with different color
      let infoHTML = "";

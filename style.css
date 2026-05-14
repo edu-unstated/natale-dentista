@@ -414,6 +414,8 @@ button {
   max-width: 100%;
   max-height: 100%;
   object-fit: cover;
+  /* Ensure video is not visually mirrored */
+  transform: none !important;
 }
 
 #container canvas {
@@ -423,6 +425,8 @@ button {
   height: 100%;
   display: block;
   pointer-events: none; /* allow clicks to pass to controls/video if needed */
+  /* Ensure canvas matches non-mirrored video */
+  transform: none !important;
 }
 
 .card-tag:hover {
