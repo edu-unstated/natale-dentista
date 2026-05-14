@@ -1,10 +1,10 @@
 const dentaturaFrontale = new Image();
-// use the required x-ray overlay image from the project's asset folder
-dentaturaFrontale.src = "asset/dentatura-frontale.jpeg";
+// asset effects removed: do not load external image for xray overlay
+// dentaturaFrontale.src = "asset/dentatura-frontale.jpeg";
 
 const otturazione = new Image();
-// use the restoration image bundled with the project
-otturazione.src = "asset/otturazione.jpeg";
+// asset effects removed: do not load external restoration image
+// otturazione.src = "asset/otturazione.jpeg";
  
 const video = document.getElementById("webcam");
  const canvas = document.getElementById("canvas");
@@ -442,19 +442,9 @@ function drawHandLandmarks(keypoints, color) {
     const drawX = mouthX - mouthW * 0.3;
     const drawY = mouthY - mouthH * 0.08;
 
-  ctx.save();
-  ctx.globalCompositeOperation = "screen";
-  ctx.globalAlpha = 0.58;
-
-  ctx.drawImage(
-    dentaturaFrontale,
-    drawX,
-    drawY,
-    mouthW,
-    mouthH
-  );
-
-  ctx.restore();
+    // Asset overlay removed: do not draw the x-ray image.
+    // If desired, a simple non-asset visual could be drawn here (e.g., translucent rect),
+    // but per request we remove asset-based effects.
 
     return { x: drawX, y: drawY, w: mouthW, h: mouthH };
 }
@@ -544,23 +534,19 @@ function drawFillingOnPoint(mappedPoint, face) {
     const jitterY = (Math.random() - 0.5) * 4;
     const flicker = 0.55 + Math.sin(Date.now() / 120) * 0.05; // oscillate around 0.55
 
-    const drawX = mappedPoint.x + jitterX - size / 2;
-    const drawY = mappedPoint.y + jitterY - size / 2;
+    const drawX = mappedPoint.x + jitterX;
+    const drawY = mappedPoint.y + jitterY;
 
+    // Asset effect removed: draw a simple subtle marker (non-asset) instead of image
     ctx.save();
-    ctx.globalCompositeOperation = "screen";
-    ctx.globalAlpha = Math.max(0.5, Math.min(0.65, flicker));
-
-    // draw slightly degraded (lower quality) by drawing at slight scale and with alpha
-    ctx.drawImage(otturazione, drawX, drawY, size, size);
-
-    // optional additional noise: small translucent overlay
-    ctx.fillStyle = 'rgba(255,255,255,0.02)';
-    ctx.fillRect(drawX - 1, drawY - 1, size + 2, size + 2);
-
+    ctx.globalAlpha = Math.max(0.4, Math.min(0.65, flicker));
+    ctx.fillStyle = 'rgba(255,200,100,0.85)';
+    ctx.beginPath();
+    ctx.arc(drawX, drawY, Math.max(4, size * 0.08), 0, Math.PI * 2);
+    ctx.fill();
     ctx.restore();
 
-    status.textContent = "Restoration detected.";
+    status.textContent = "Restoration (marker)";
 }
  
  

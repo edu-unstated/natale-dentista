@@ -290,11 +290,7 @@ function render() {
     const body = document.createElement('div');
     body.className = 'card-body';
 
-    // id
-    const idEl = document.createElement('span');
-    idEl.className = 'card-id';
-    idEl.textContent = `#${String(item.id).padStart(2, '0')}`;
-    body.appendChild(idEl);
+  // id (removed): image numbering hidden per request
 
     const desc = document.createElement('p');
     desc.className = 'card-desc';
